@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥔 Potato Disease Detector</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            min-height: 100vh;
+            color: #eee;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+        }
+        .header h1 {
+            font-size: 2.2rem;
+            color: #4ecca3;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #aaa;
+            font-size: 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 28px;
+            border: 2px solid #4ecca3;
+            background: transparent;
+            color: #4ecca3;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        .tab-btn:hover,
+        .tab-btn.active {
+            background: #4ecca3;
+            color: #1a1a2e;
+            font-weight: bold;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(78,204,163,0.3);
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 700px;
+            margin: 0 auto 30px;
+        }
+        .card h2 {
+            color: #4ecca3;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(78,204,163,0.3);
+            border-radius: 8px;
+            color: #eee;
+            font-size: 1rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(78,204,163,0.4);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 16px;
+        }
+        .upload-area:hover {
+            border-color: #4ecca3;
+            background: rgba(78,204,163,0.05);
+        }
+        .upload-area p { color: #aaa; margin-top: 8px; }
+
+        #preview, #preview2 {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #4ecca3, #38b993);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .result-card {
+            display: none;
+            max-width: 700px;
+            margin: 0 auto 30px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(78,204,163,0.3);
+        }
+
+        .result-header {
+            padding: 20px 24px;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+        .result-header.green  { background: rgba(46,213,115,0.2);  color: #2ed573; }
+        .result-header.orange { background: rgba(255,165,2,0.2);   color: #ffa502; }
+        .result-header.red    { background: rgba(255,71,87,0.2);    color: #ff4757; }
+
+        .result-body { padding: 24px; }
+
+        .confidence-bar {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            height: 12px;
+            margin: 10px 0 20px;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            border-radius: 20px;
+            background: linear-gradient(90deg, #4ecca3, #38b993);
+            transition: width 1s ease;
+        }
+
+        .images-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .images-row img {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid rgba(78,204,163,0.3);
+        }
+        .img-label {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        .steps-list {
+            list-style: none;
+            margin: 12px 0;
+        }
+        .steps-list li {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            border-left: 3px solid #4ecca3;
+        }
+
+        .prevention-box {
+            background: rgba(78,204,163,0.1);
+            border: 1px solid rgba(78,204,163,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 14px;
+            font-size: 0.9rem;
+            color: #4ecca3;
+        }
+
+        .fusion-scores {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .score-box {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .score-box .val {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #4ecca3;
+        }
+        .score-box .lbl {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #4ecca3;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(78,204,163,0.2);
+            border-top-color: #4ecca3;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #4ecca3;
+            margin: 16px 0 8px;
+        }
+
+        @media (max-width: 500px) {
+            .form-row { grid-template-columns: 1fr; }
+            .images-row { grid-template-columns: 1fr; }
+            .fusion-scores { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🥔 Potato Disease Detector</h1>
+    <p>AI-powered diagnosis for farmers — instant, accurate, explainable</p>
+</div>
+
+<!-- TAB BUTTONS -->
+<div class="tabs">
+    <button class="tab-btn active" onclick="showTab('image')">
+        📷 Leaf Photo
+    </button>
+    <button class="tab-btn" onclick="showTab('text')">
+        🌦️ Weather Symptoms
+    </button>
+    <button class="tab-btn" onclick="showTab('fusion')">
+        🔗 Both (Best Accuracy)
+    </button>
+</div>
+
+
+<!-- ============ IMAGE TAB ============ -->
+<div id="image" class="tab-content active">
+    <div class="card">
+        <h2>📷 Upload Leaf Photo</h2>
+        <div class="upload-area" onclick="document.getElementById('imgFile').click()">
+            <div style="font-size:2.5rem">🌿</div>
+            <p>Click to upload potato leaf photo</p>
+            <p style="font-size:0.8rem">JPG, PNG supported</p>
+        </div>
+        <input type="file" id="imgFile" accept="image/*"
+               style="display:none" onchange="previewImage(this,'preview')">
+        <img id="preview">
+        <button class="btn" onclick="predictImage()">
+            🔍 Diagnose Disease
+        </button>
+    </div>
+    <div class="loading" id="imgLoading">
+        <div class="spinner"></div>
+        <p>Analyzing leaf + generating heatmap...</p>
+    </div>
+    <div class="result-card" id="imgResult"></div>
+</div>
+
+
+<!-- ============ TEXT TAB ============ -->
+<div id="text" class="tab-content">
+    <div class="card">
+        <h2>🌦️ Enter Weather Conditions</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>🌡️ Temperature (°C)</label>
+                <input type="number" id="temp" value="22" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>💧 Humidity (%)</label>
+                <input type="number" id="humidity" value="75" step="0.1">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>💨 Wind Speed (km/h)</label>
+                <input type="number" id="wind_speed" value="5" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>🧭 Wind Bearing (°)</label>
+                <input type="number" id="wind_bearing" value="180" step="1">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>👁️ Visibility (km)</label>
+                <input type="number" id="visibility" value="10" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>🔵 Pressure (hPa)</label>
+                <input type="number" id="pressure" value="1015" step="0.1">
+            </div>
+        </div>
+        <button class="btn" onclick="predictText()">
+            🔍 Diagnose Disease
+        </button>
+    </div>
+    <div class="loading" id="textLoading">
+        <div class="spinner"></div>
+        <p>Analyzing weather conditions...</p>
+    </div>
+    <div class="result-card" id="textResult"></div>
+</div>
+
+
+<!-- ============ FUSION TAB ============ -->
+<div id="fusion" class="tab-content">
+    <div class="card">
+        <h2>🔗 Photo + Weather (Most Accurate)</h2>
+        <div class="upload-area" onclick="document.getElementById('fusImgFile').click()">
+            <div style="font-size:2.5rem">🌿</div>
+            <p>Click to upload leaf photo</p>
+        </div>
+        <input type="file" id="fusImgFile" accept="image/*"
+               style="display:none" onchange="previewImage(this,'preview2')">
+        <img id="preview2">
+
+        <div style="margin-top:20px">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>🌡️ Temperature (°C)</label>
+                    <input type="number" id="ftemp" value="22" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>💧 Humidity (%)</label>
+                    <input type="number" id="fhumidity" value="75" step="0.1">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>💨 Wind Speed</label>
+                    <input type="number" id="fwind_speed" value="5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>🧭 Wind Bearing</label>
+                    <input type="number" id="fwind_bearing" value="180" step="1">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>👁️ Visibility</label>
+                    <input type="number" id="fvisibility" value="10" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>🔵 Pressure</label>
+                    <input type="number" id="fpressure" value="1015" step="0.1">
+                </div>
+            </div>
+        </div>
+        <button class="btn" onclick="predictFusion()">
+            🔍 Diagnose with Both Models
+        </button>
+    </div>
+    <div class="loading" id="fusLoading">
+        <div class="spinner"></div>
+        <p>Running fusion analysis...</p>
+    </div>
+    <div class="result-card" id="fusResult"></div>
+</div>
+
+
+<script>
+function showTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b =>
+        b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t =>
+        t.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    event.target.classList.add('active');
+}
+
+function previewImage(input, previewId) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = document.getElementById(previewId);
+        img.src = e.target.result;
+        img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+function buildResult(data, containerId) {
+    const div = document.getElementById(containerId);
+    const colorClass = data.color || 'green';
+
+    let fusionHtml = '';
+    if (data.mode === 'fusion') {
+        fusionHtml = `
+        <div class="fusion-scores">
+            <div class="score-box">
+                <div class="val">${data.image_conf}%</div>
+                <div class="lbl">📷 Image Model</div>
+            </div>
+            <div class="score-box">
+                <div class="val">${data.text_conf}%</div>
+                <div class="lbl">🌦️ Weather Model</div>
+            </div>
+            <div class="score-box">
+                <div class="val">${data.confidence}%</div>
+                <div class="lbl">🔗 Combined</div>
+            </div>
+        </div>`;
+    }
+
+    let heatmapHtml = '';
+    if (data.gradcam) {
+        heatmapHtml = `
+        <p class="section-title">Disease Localization (Grad-CAM)</p>
+        <div class="images-row">
+            <div>
+                <img src="${data.gradcam}" alt="Grad-CAM">
+                <div class="img-label">🔴 Red = Disease Region</div>
+            </div>
+        </div>`;
+    }
+
+    const stepsHtml = data.steps.map(s =>
+        `<li>${s}</li>`).join('');
+
+    div.innerHTML = `
+        <div class="result-header ${colorClass}">
+            Diagnosis: ${data.disease}
+        </div>
+        <div class="result-body">
+            ${fusionHtml}
+            <p class="section-title">Confidence</p>
+            <div style="font-size:1.6rem;font-weight:bold;color:#4ecca3">
+                ${data.confidence}%
+            </div>
+            <div class="confidence-bar">
+                <div class="confidence-fill" 
+                     style="width:${data.confidence}%"></div>
+            </div>
+            <p class="section-title">Urgency</p>
+            <p style="font-size:1.1rem">${data.urgency}</p>
+            ${heatmapHtml}
+            <p class="section-title">Treatment Steps</p>
+            <ul class="steps-list">${stepsHtml}</ul>
+            <div class="prevention-box">
+                🛡️ Prevention: ${data.prevention}
+            </div>
+        </div>`;
+
+    div.style.display = 'block';
+    div.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function predictImage() {
+    const file = document.getElementById('imgFile').files[0];
+    if (!file) { alert('Please upload an image first!'); return; }
+
+    document.getElementById('imgLoading').style.display = 'block';
+    document.getElementById('imgResult').style.display  = 'none';
+
+    const form = new FormData();
+    form.append('image', file);
+
+    const res  = await fetch('/predict/image',
+                    { method: 'POST', body: form });
+    const data = await res.json();
+
+    document.getElementById('imgLoading').style.display = 'none';
+    buildResult(data, 'imgResult');
+}
+
+async function predictText() {
+    document.getElementById('textLoading').style.display = 'block';
+    document.getElementById('textResult').style.display  = 'none';
+
+    const payload = {
+        temperature:  document.getElementById('temp').value,
+        humidity:     document.getElementById('humidity').value,
+        wind_speed:   document.getElementById('wind_speed').value,
+        wind_bearing: document.getElementById('wind_bearing').value,
+        visibility:   document.getElementById('visibility').value,
+        pressure:     document.getElementById('pressure').value
+    };
+
+    const res  = await fetch('/predict/text', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    document.getElementById('textLoading').style.display = 'none';
+    buildResult(data, 'textResult');
+}
+
+async function predictFusion() {
+    const file = document.getElementById('fusImgFile').files[0];
+    if (!file) { alert('Please upload an image first!'); return; }
+
+    document.getElementById('fusLoading').style.display = 'block';
+    document.getElementById('fusResult').style.display  = 'none';
+
+    const form = new FormData();
+    form.append('image',        file);
+    form.append('temperature',  document.getElementById('ftemp').value);
+    form.append('humidity',     document.getElementById('fhumidity').value);
+    form.append('wind_speed',   document.getElementById('fwind_speed').value);
+    form.append('wind_bearing', document.getElementById('fwind_bearing').value);
+    form.append('visibility',   document.getElementById('fvisibility').value);
+    form.append('pressure',     document.getElementById('fpressure').value);
+
+    const res  = await fetch('/predict/fusion',
+                    { method: 'POST', body: form });
+    const data = await res.json();
+
+    document.getElementById('fusLoading').style.display = 'none';
+    buildResult(data, 'fusResult');
+}
+</script>
+</body>
+</html>
