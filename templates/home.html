@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="hero">
+  <h1>🌾 Crop Disease Detection</h1>
+  <p>Upload leaf photo or enter weather data</p>
+
+  <div class="actions">
+    <a href="/detect" class="btn">📷 Scan Leaf</a>
+    <a href="/detect?mode=weather" class="btn">🌦️ Weather Check</a>
+  </div>
+</div>
+
+{% endblock %}

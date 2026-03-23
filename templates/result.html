@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>📊 Result</h2>
+
+<div class="card">
+  <h1>{{ disease }}</h1>
+  <p>{{ urgency }}</p>
+
+  <h3>Steps:</h3>
+  <ul>
+    {% for step in steps %}
+      <li>{{ step }}</li>
+    {% endfor %}
+  </ul>
+
+  <p><strong>Prevention:</strong> {{ prevention }}</p>
+</div>
+
+{% endblock %}

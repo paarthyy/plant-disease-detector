@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>🧪 Analyse Your Crop</h2>
+
+<form id="imageForm" enctype="multipart/form-data">
+  <input type="file" name="image" required>
+  <button type="submit">🔍 Predict</button>
+</form>
+
+<div id="result"></div>
+
+<script>
+document.getElementById("imageForm").onsubmit = async (e) => {
+  e.preventDefault();
+  let formData = new FormData(e.target);
+
+  let res = await fetch("/predict/image", {
+    method: "POST",
+    body: formData
+  });
+
+  let data = await res.json();
+  document.getElementById("result").innerHTML = `
+    <h3>${data.disease}</h3>
+    <p>Confidence: ${data.confidence}%</p>
+  `;
+};
+</script>
+
+{% endblock %}
