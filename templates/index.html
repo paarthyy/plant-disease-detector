@@ -1,1356 +1,973 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PotatoAI — Disease Detection System</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-<style>
-:root {
-  --soil:     #1C1410;
-  --earth:    #2A1F14;
-  --bark:     #3D2B1A;
-  --leaf:     #4A7C3F;
-  --sprout:   #6BAF5E;
-  --lime:     #A8D466;
-  --cream:    #F5EDD6;
-  --amber:    #E8A847;
-  --rust:     #C0522A;
-  --fog:      rgba(245,237,214,0.07);
-  --fogm:     rgba(245,237,214,0.12);
-  --r: 16px;
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--soil);
-  color: var(--cream);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ── GRAIN OVERLAY ── */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 999;
-  opacity: 0.6;
-}
-
-/* ── NAV ── */
-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 40px;
-  background: rgba(28,20,16,0.85);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(168,212,102,0.12);
-}
-
-.nav-logo {
-  display: flex; align-items: center; gap: 10px;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800; font-size: 1.3rem;
-  color: var(--lime);
-  letter-spacing: -0.5px;
-}
-
-.nav-logo .dot {
-  width: 10px; height: 10px;
-  background: var(--sprout);
-  border-radius: 50%;
-  animation: pulse 2s ease infinite;
-}
-
-@keyframes pulse {
-  0%,100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(1.4); opacity: 0.6; }
-}
-
-.nav-links { display: flex; gap: 32px; }
-.nav-links a {
-  color: rgba(245,237,214,0.6);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-.nav-links a:hover { color: var(--lime); }
-
-/* ── HERO ── */
-.hero {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 120px 40px 60px;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-bg {
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 50%, rgba(74,124,63,0.15) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 80% 30%, rgba(168,212,102,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 50% 100%, rgba(192,82,42,0.12) 0%, transparent 50%);
-}
-
-/* floating potato shapes */
-.hero-bg::after {
-  content: '🥔';
-  position: absolute;
-  font-size: 300px;
-  right: -60px; bottom: -40px;
-  opacity: 0.04;
-  filter: grayscale(1);
-  transform: rotate(-20deg);
-}
-
-.hero-content {
-  position: relative;
-  max-width: 780px;
-  text-align: center;
-  animation: fadeUp 0.8s ease both;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.hero-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(107,175,94,0.15);
-  border: 1px solid rgba(107,175,94,0.35);
-  border-radius: 40px;
-  padding: 6px 16px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--sprout);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin-bottom: 28px;
-}
-
-.hero h1 {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(2.8rem, 6vw, 5rem);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -2px;
-  margin-bottom: 24px;
-}
-
-.hero h1 .accent { color: var(--lime); }
-.hero h1 .accent2 { color: var(--amber); }
-
-.hero-desc {
-  font-size: 1.15rem;
-  color: rgba(245,237,214,0.6);
-  font-weight: 300;
-  line-height: 1.7;
-  max-width: 560px;
-  margin: 0 auto 40px;
-}
-
-.hero-actions {
-  display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
-}
-
-.btn-primary {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--lime);
-  color: var(--soil);
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 0.95rem;
-  padding: 14px 28px;
-  border-radius: var(--r);
-  border: none; cursor: pointer;
-  text-decoration: none;
-  transition: all 0.25s;
-  letter-spacing: -0.3px;
-}
-.btn-primary:hover {
-  background: var(--sprout);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(168,212,102,0.25);
-}
-
-.btn-ghost {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: transparent;
-  color: var(--cream);
-  font-size: 0.95rem;
-  font-weight: 500;
-  padding: 14px 28px;
-  border-radius: var(--r);
-  border: 1px solid rgba(245,237,214,0.2);
-  cursor: pointer;
-  text-decoration: none;
-  transition: all 0.25s;
-}
-.btn-ghost:hover {
-  border-color: rgba(245,237,214,0.5);
-  background: var(--fog);
-}
-
-.hero-stats {
-  display: flex; gap: 40px; justify-content: center;
-  margin-top: 56px;
-  padding-top: 40px;
-  border-top: 1px solid rgba(245,237,214,0.08);
-  animation: fadeUp 0.8s 0.3s ease both;
-}
-
-.stat { text-align: center; }
-.stat-num {
-  font-family: 'Syne', sans-serif;
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--lime);
-  line-height: 1;
-}
-.stat-label {
-  font-size: 0.78rem;
-  color: rgba(245,237,214,0.45);
-  margin-top: 5px;
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* ── SECTION ── */
-section {
-  padding: 80px 40px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.section-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--sprout);
-  margin-bottom: 12px;
-}
-
-.section-title {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(1.8rem, 3vw, 2.5rem);
-  font-weight: 800;
-  letter-spacing: -1px;
-  margin-bottom: 16px;
-}
-
-.section-sub {
-  color: rgba(245,237,214,0.5);
-  font-size: 1rem;
-  font-weight: 300;
-  max-width: 480px;
-  line-height: 1.7;
-  margin-bottom: 48px;
-}
-
-/* ── FEATURES GRID ── */
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
-}
-
-.feature-card {
-  background: var(--earth);
-  border: 1px solid rgba(245,237,214,0.08);
-  border-radius: 20px;
-  padding: 28px;
-  transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-.feature-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--leaf), var(--lime));
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.feature-card:hover {
-  border-color: rgba(168,212,102,0.2);
-  transform: translateY(-3px);
-}
-.feature-card:hover::before { opacity: 1; }
-
-.feature-icon {
-  width: 48px; height: 48px;
-  border-radius: 12px;
-  display: grid; place-items: center;
-  font-size: 1.4rem;
-  margin-bottom: 18px;
-}
-
-.feature-card h3 {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  letter-spacing: -0.3px;
-}
-
-.feature-card p {
-  font-size: 0.88rem;
-  color: rgba(245,237,214,0.5);
-  line-height: 1.65;
-  font-weight: 300;
-}
-
-.feature-card .tag {
-  display: inline-block;
-  margin-top: 16px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-/* ── DIVIDER ── */
-.divider {
-  width: 100%; height: 1px;
-  background: rgba(245,237,214,0.07);
-  margin: 0 40px;
-  width: calc(100% - 80px);
-}
-
-/* ── APP SECTION ── */
-.app-wrapper {
-  background: var(--earth);
-  border: 1px solid rgba(245,237,214,0.08);
-  border-radius: 24px;
-  overflow: hidden;
-}
-
-.app-tabs {
-  display: flex;
-  border-bottom: 1px solid rgba(245,237,214,0.08);
-  padding: 0 8px;
-  gap: 4px;
-  background: var(--soil);
-}
-
-.app-tab {
-  padding: 16px 22px;
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: rgba(245,237,214,0.4);
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  display: flex; align-items: center; gap: 8px;
-  white-space: nowrap;
-}
-.app-tab:hover { color: rgba(245,237,214,0.8); }
-.app-tab.active {
-  color: var(--lime);
-  border-bottom-color: var(--lime);
-}
-
-.tab-panel { display: none; padding: 32px; }
-.tab-panel.active { display: block; }
-
-/* ── UPLOAD ZONE ── */
-.upload-zone {
-  border: 2px dashed rgba(168,212,102,0.25);
-  border-radius: 16px;
-  padding: 48px 24px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  position: relative;
-}
-.upload-zone:hover, .upload-zone.drag-over {
-  border-color: var(--lime);
-  background: rgba(168,212,102,0.05);
-}
-
-.upload-zone input[type=file] {
-  position: absolute; inset: 0;
-  opacity: 0; cursor: pointer;
-}
-
-.upload-icon {
-  font-size: 3rem; margin-bottom: 12px;
-  display: block;
-}
-
-.upload-zone h3 {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700; font-size: 1.1rem;
-  margin-bottom: 6px;
-}
-.upload-zone p {
-  font-size: 0.85rem;
-  color: rgba(245,237,214,0.4);
-}
-
-.preview-img {
-  max-height: 220px;
-  border-radius: 12px;
-  margin: 16px auto 0;
-  display: none;
-  max-width: 100%;
-}
-
-/* ── FORM ── */
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 20px;
-}
-
-.field label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: rgba(245,237,214,0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 7px;
-}
-
-.field input {
-  width: 100%;
-  background: rgba(245,237,214,0.05);
-  border: 1px solid rgba(245,237,214,0.12);
-  border-radius: 10px;
-  padding: 11px 14px;
-  color: var(--cream);
-  font-size: 0.95rem;
-  font-family: 'DM Sans', sans-serif;
-  transition: border-color 0.2s;
-}
-.field input:focus {
-  outline: none;
-  border-color: rgba(168,212,102,0.5);
-}
-
-/* ── SUBMIT BTN ── */
-.submit-btn {
-  width: 100%;
-  padding: 15px;
-  background: linear-gradient(135deg, var(--leaf), var(--sprout));
-  color: var(--cream);
-  font-family: 'Syne', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  transition: all 0.25s;
-  margin-top: 4px;
-  letter-spacing: -0.3px;
-}
-.submit-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(74,124,63,0.35);
-}
-.submit-btn:disabled {
-  opacity: 0.5; cursor: not-allowed; transform: none;
-}
-
-/* ── LOADING ── */
-.loading-state {
-  display: none;
-  text-align: center;
-  padding: 48px 24px;
-}
-
-.loader {
-  width: 56px; height: 56px;
-  margin: 0 auto 20px;
-  position: relative;
-}
-.loader::before, .loader::after {
-  content: '';
-  position: absolute; inset: 0;
-  border-radius: 50%;
-  border: 3px solid transparent;
-}
-.loader::before {
-  border-top-color: var(--lime);
-  animation: spin 1s linear infinite;
-}
-.loader::after {
-  border-bottom-color: var(--sprout);
-  animation: spin 1.5s linear infinite reverse;
-  inset: 8px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.loading-state h3 {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.1rem; font-weight: 700;
-  margin-bottom: 6px;
-}
-.loading-state p {
-  font-size: 0.85rem;
-  color: rgba(245,237,214,0.45);
-}
-
-/* ── RESULT ── */
-.result-state { display: none; }
-
-.result-hero {
-  border-radius: 16px;
-  padding: 28px;
-  margin-bottom: 20px;
-  position: relative;
-  overflow: hidden;
-}
-.result-hero.healthy  { background: linear-gradient(135deg, rgba(74,124,63,0.25), rgba(107,175,94,0.1)); border: 1px solid rgba(107,175,94,0.3); }
-.result-hero.warning  { background: linear-gradient(135deg, rgba(232,168,71,0.2), rgba(232,168,71,0.05)); border: 1px solid rgba(232,168,71,0.3); }
-.result-hero.danger   { background: linear-gradient(135deg, rgba(192,82,42,0.25), rgba(192,82,42,0.08)); border: 1px solid rgba(192,82,42,0.3); }
-
-.result-disease {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.7rem;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin-bottom: 6px;
-}
-.result-hero.healthy  .result-disease { color: var(--sprout); }
-.result-hero.warning  .result-disease { color: var(--amber); }
-.result-hero.danger   .result-disease { color: #E8714A; }
-
-.result-urgency {
-  font-size: 0.9rem;
-  font-weight: 500;
-  opacity: 0.85;
-  margin-bottom: 20px;
-}
-
-.conf-row {
-  display: flex; align-items: center; gap: 14px;
-}
-.conf-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: rgba(245,237,214,0.5);
-  white-space: nowrap;
-}
-.conf-bar {
-  flex: 1;
-  height: 8px;
-  background: rgba(245,237,214,0.1);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.conf-fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
-  width: 0;
-}
-.healthy  .conf-fill { background: linear-gradient(90deg, var(--leaf), var(--lime)); }
-.warning  .conf-fill { background: linear-gradient(90deg, #C08A20, var(--amber)); }
-.danger   .conf-fill { background: linear-gradient(90deg, var(--rust), #E8714A); }
-
-.conf-pct {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-/* Fusion scores */
-.fusion-row {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px; margin-bottom: 20px;
-}
-.fusion-box {
-  background: rgba(245,237,214,0.05);
-  border: 1px solid rgba(245,237,214,0.1);
-  border-radius: 12px;
-  padding: 14px;
-  text-align: center;
-}
-.fusion-box .fval {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--lime);
-}
-.fusion-box .flbl {
-  font-size: 0.72rem;
-  color: rgba(245,237,214,0.4);
-  margin-top: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-/* Heatmap + original */
-.images-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 20px;
-}
-.img-box { position: relative; }
-.img-box img {
-  width: 100%; border-radius: 12px;
-  display: block;
-  border: 1px solid rgba(245,237,214,0.1);
-}
-.img-box .img-caption {
-  position: absolute;
-  bottom: 8px; left: 8px; right: 8px;
-  background: rgba(28,20,16,0.8);
-  backdrop-filter: blur(8px);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-align: center;
-}
-
-/* Treatment */
-.treatment-block {
-  background: rgba(245,237,214,0.03);
-  border: 1px solid rgba(245,237,214,0.08);
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 14px;
-}
-.treatment-block h4 {
-  font-family: 'Syne', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: rgba(245,237,214,0.4);
-  margin-bottom: 14px;
-}
-.step-item {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(245,237,214,0.05);
-}
-.step-item:last-child { border-bottom: none; }
-.step-num {
-  width: 24px; height: 24px;
-  border-radius: 6px;
-  background: rgba(168,212,102,0.15);
-  color: var(--lime);
-  font-size: 0.72rem;
-  font-weight: 700;
-  display: grid; place-items: center;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.step-text { font-size: 0.9rem; line-height: 1.5; font-weight: 400; }
-
-.prevention-strip {
-  display: flex; align-items: center; gap: 12px;
-  background: rgba(107,175,94,0.1);
-  border: 1px solid rgba(107,175,94,0.25);
-  border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 0.88rem;
-}
-.prevention-strip span:first-child { font-size: 1.2rem; }
-
-.reset-btn {
-  width: 100%;
-  padding: 12px;
-  background: transparent;
-  border: 1px solid rgba(245,237,214,0.15);
-  border-radius: 10px;
-  color: rgba(245,237,214,0.5);
-  font-size: 0.88rem;
-  cursor: pointer;
-  margin-top: 14px;
-  transition: all 0.2s;
-  font-family: 'DM Sans', sans-serif;
-}
-.reset-btn:hover {
-  border-color: rgba(245,237,214,0.35);
-  color: var(--cream);
-}
-
-/* ── DISEASES SECTION ── */
-.diseases-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.disease-card {
-  border-radius: 20px;
-  overflow: hidden;
-  border: 1px solid rgba(245,237,214,0.08);
-  transition: transform 0.3s;
-}
-.disease-card:hover { transform: translateY(-4px); }
-
-.disease-card-header {
-  padding: 24px 24px 16px;
-  display: flex; align-items: center; gap: 14px;
-}
-.disease-emoji { font-size: 2.2rem; }
-.disease-card-header h3 {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.1rem; font-weight: 700;
-  margin-bottom: 3px;
-}
-.disease-card-header p {
-  font-size: 0.78rem;
-  opacity: 0.5;
-  font-style: italic;
-}
-
-.disease-card-body {
-  padding: 0 24px 24px;
-  font-size: 0.87rem;
-  color: rgba(245,237,214,0.6);
-  line-height: 1.65;
-  font-weight: 300;
-}
-
-.disease-card.healthy { background: rgba(74,124,63,0.12); }
-.disease-card.warning { background: rgba(232,168,71,0.1); }
-.disease-card.danger  { background: rgba(192,82,42,0.12); }
-
-.severity-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 12px;
-}
-.healthy .severity-badge { background: rgba(107,175,94,0.2); color: var(--sprout); }
-.warning .severity-badge { background: rgba(232,168,71,0.2); color: var(--amber); }
-.danger  .severity-badge { background: rgba(192,82,42,0.2);  color: #E8714A; }
-
-/* ── HOW IT WORKS ── */
-.steps-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0;
-  position: relative;
-}
-.steps-row::before {
-  content: '';
-  position: absolute;
-  top: 28px; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(168,212,102,0.3), transparent);
-}
-
-.step-block {
-  padding: 0 24px;
-  position: relative;
-  animation: fadeUp 0.6s ease both;
-}
-.step-block:nth-child(1) { animation-delay: 0.1s; }
-.step-block:nth-child(2) { animation-delay: 0.2s; }
-.step-block:nth-child(3) { animation-delay: 0.3s; }
-.step-block:nth-child(4) { animation-delay: 0.4s; }
-
-.step-circle {
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: var(--earth);
-  border: 2px solid rgba(168,212,102,0.3);
-  display: grid; place-items: center;
-  font-size: 1.4rem;
-  margin-bottom: 20px;
-  position: relative; z-index: 1;
-}
-
-.step-block h4 {
-  font-family: 'Syne', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-  letter-spacing: -0.2px;
-}
-.step-block p {
-  font-size: 0.83rem;
-  color: rgba(245,237,214,0.45);
-  line-height: 1.6;
-  font-weight: 300;
-}
-
-/* ── FOOTER ── */
-footer {
-  border-top: 1px solid rgba(245,237,214,0.07);
-  padding: 32px 40px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-.footer-logo {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 1.1rem;
-  color: var(--lime);
-}
-.footer-note {
-  font-size: 0.8rem;
-  color: rgba(245,237,214,0.3);
-}
-.footer-tags {
-  display: flex; gap: 8px; flex-wrap: wrap;
-}
-.footer-tag {
-  padding: 4px 12px;
-  border-radius: 20px;
-  background: rgba(245,237,214,0.05);
-  border: 1px solid rgba(245,237,214,0.1);
-  font-size: 0.72rem;
-  color: rgba(245,237,214,0.4);
-}
-
-/* scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--soil); }
-::-webkit-scrollbar-thumb { background: var(--bark); border-radius: 3px; }
-
-@media (max-width: 640px) {
-  nav { padding: 14px 20px; }
-  .nav-links { display: none; }
-  section { padding: 60px 20px; }
-  .hero { padding: 100px 20px 50px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .images-grid { grid-template-columns: 1fr; }
-  .fusion-row { grid-template-columns: 1fr; }
-  footer { padding: 24px 20px; flex-direction: column; align-items: flex-start; }
-  .steps-row::before { display: none; }
-  .hero-stats { gap: 24px; }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PotatoAI — Mobile Disease Detection</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1C1410">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+    
+    <style>
+    :root {
+      --soil:     #1C1410;
+      --earth:    #2A1F14;
+      --bark:     #3D2B1A;
+      --leaf:     #4A7C3F;
+      --sprout:   #6BAF5E;
+      --lime:     #A8D466;
+      --cream:    #F5EDD6;
+      --amber:    #E8A847;
+      --rust:     #C0522A;
+      --fog:      rgba(245,237,214,0.07);
+      --fogm:     rgba(245,237,214,0.12);
+      --r: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--soil);
+      color: var(--cream);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent; /* Better mobile feel */
+    }
+
+    /* ── GRAIN OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.6;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 40px;
+      background: rgba(28,20,16,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(168,212,102,0.12);
+    }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.3rem;
+      color: var(--lime);
+      letter-spacing: -0.5px;
+    }
+
+    .nav-logo .dot {
+      width: 10px; height: 10px;
+      background: var(--sprout);
+      border-radius: 50%;
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.4); opacity: 0.6; }
+    }
+
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a {
+      color: rgba(245,237,214,0.6);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--lime); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 120px 40px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 50%, rgba(74,124,63,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 30%, rgba(168,212,102,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 50% 100%, rgba(192,82,42,0.12) 0%, transparent 50%);
+    }
+
+    .hero-bg::after {
+      content: '🥔';
+      position: absolute;
+      font-size: 300px;
+      right: -60px; bottom: -40px;
+      opacity: 0.04;
+      filter: grayscale(1);
+      transform: rotate(-20deg);
+    }
+
+    .hero-content {
+      position: relative;
+      max-width: 780px;
+      text-align: center;
+      animation: fadeUp 0.8s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(107,175,94,0.15);
+      border: 1px solid rgba(107,175,94,0.35);
+      border-radius: 40px;
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--sprout);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.2rem, 6vw, 5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 .accent { color: var(--lime); }
+    .hero h1 .accent2 { color: var(--amber); }
+
+    .hero-desc {
+      font-size: 1.15rem;
+      color: rgba(245,237,214,0.6);
+      font-weight: 300;
+      line-height: 1.7;
+      max-width: 560px;
+      margin: 0 auto 40px;
+    }
+
+    .hero-actions {
+      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--lime);
+      color: var(--soil);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 14px 28px;
+      border-radius: var(--r);
+      border: none; cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s;
+      letter-spacing: -0.3px;
+    }
+    .btn-primary:hover {
+      background: var(--sprout);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(168,212,102,0.25);
+    }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent;
+      color: var(--cream);
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 14px 28px;
+      border-radius: var(--r);
+      border: 1px solid rgba(245,237,214,0.2);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s;
+    }
+
+    .hero-stats {
+      display: flex; gap: 40px; justify-content: center;
+      margin-top: 56px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(245,237,214,0.08);
+      animation: fadeUp 0.8s 0.3s ease both;
+    }
+
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--lime);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.78rem;
+      color: rgba(245,237,214,0.45);
+      margin-top: 5px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── SECTION ── */
+    section {
+      padding: 80px 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--sprout);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      color: rgba(245,237,214,0.5);
+      font-size: 1rem;
+      font-weight: 300;
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+    }
+
+    /* ── FEATURES GRID ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--earth);
+      border: 1px solid rgba(245,237,214,0.08);
+      border-radius: 20px;
+      padding: 28px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--leaf), var(--lime));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover {
+      border-color: rgba(168,212,102,0.2);
+      transform: translateY(-3px);
+    }
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      font-size: 1.4rem;
+      margin-bottom: 18px;
+    }
+
+    .feature-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .feature-card p {
+      font-size: 0.88rem;
+      color: rgba(245,237,214,0.5);
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    .feature-card .tag {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      width: 100%; height: 1px;
+      background: rgba(245,237,214,0.07);
+      margin: 0 40px;
+      width: calc(100% - 80px);
+    }
+
+    /* ── APP SECTION ── */
+    .app-wrapper {
+      background: var(--earth);
+      border: 1px solid rgba(245,237,214,0.08);
+      border-radius: 24px;
+      overflow: hidden;
+    }
+
+    .app-tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(245,237,214,0.08);
+      padding: 0 8px;
+      gap: 4px;
+      background: var(--soil);
+    }
+
+    .app-tab {
+      padding: 16px 22px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: rgba(245,237,214,0.4);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      display: flex; align-items: center; gap: 8px;
+      white-space: nowrap;
+    }
+    .app-tab:hover { color: rgba(245,237,214,0.8); }
+    .app-tab.active {
+      color: var(--lime);
+      border-bottom-color: var(--lime);
+    }
+
+    .tab-panel { display: none; padding: 32px; }
+    .tab-panel.active { display: block; }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      border: 2px dashed rgba(168,212,102,0.25);
+      border-radius: 16px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--lime);
+      background: rgba(168,212,102,0.05);
+    }
+
+    .upload-zone input[type=file] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer;
+    }
+
+    .upload-icon {
+      font-size: 3rem; margin-bottom: 12px;
+      display: block;
+    }
+
+    .upload-zone h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1.1rem;
+      margin-bottom: 6px;
+    }
+    .upload-zone p {
+      font-size: 0.85rem;
+      color: rgba(245,237,214,0.4);
+    }
+
+    .preview-img {
+      max-height: 220px;
+      border-radius: 12px;
+      margin: 16px auto 0;
+      display: none;
+      max-width: 100%;
+    }
+
+    /* ── FORM ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: rgba(245,237,214,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 7px;
+    }
+
+    .field input {
+      width: 100%;
+      background: rgba(245,237,214,0.05);
+      border: 1px solid rgba(245,237,214,0.12);
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: var(--cream);
+      font-size: 0.95rem;
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    /* ── SUBMIT BTN ── */
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--leaf), var(--sprout));
+      color: var(--cream);
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all 0.25s;
+      margin-top: 4px;
+      letter-spacing: -0.3px;
+    }
+
+    /* ── LOADING ── */
+    .loading-state {
+      display: none;
+      text-align: center;
+      padding: 48px 24px;
+    }
+
+    .loader {
+      width: 56px; height: 56px;
+      margin: 0 auto 20px;
+      position: relative;
+    }
+    .loader::before, .loader::after {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      border: 3px solid transparent;
+    }
+    .loader::before {
+      border-top-color: var(--lime);
+      animation: spin 1s linear infinite;
+    }
+    .loader::after {
+      border-bottom-color: var(--sprout);
+      animation: spin 1.5s linear infinite reverse;
+      inset: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULT ── */
+    .result-state { display: none; }
+
+    .result-hero {
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .result-hero.healthy  { background: linear-gradient(135deg, rgba(74,124,63,0.25), rgba(107,175,94,0.1)); border: 1px solid rgba(107,175,94,0.3); }
+    .result-hero.warning  { background: linear-gradient(135deg, rgba(232,168,71,0.2), rgba(232,168,71,0.05)); border: 1px solid rgba(232,168,71,0.3); }
+    .result-hero.danger   { background: linear-gradient(135deg, rgba(192,82,42,0.25), rgba(192,82,42,0.08)); border: 1px solid rgba(192,82,42,0.3); }
+
+    .result-disease {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .result-hero.healthy  .result-disease { color: var(--sprout); }
+    .result-hero.warning  .result-disease { color: var(--amber); }
+    .result-hero.danger   .result-disease { color: #E8714A; }
+
+    .conf-row {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .conf-bar {
+      flex: 1;
+      height: 8px;
+      background: rgba(245,237,214,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .conf-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+      width: 0;
+    }
+    .healthy  .conf-fill { background: linear-gradient(90deg, var(--leaf), var(--lime)); }
+    .warning  .conf-fill { background: linear-gradient(90deg, #C08A20, var(--amber)); }
+    .danger   .conf-fill { background: linear-gradient(90deg, var(--rust), #E8714A); }
+
+    /* Fusion scores */
+    .fusion-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px; margin-bottom: 20px;
+    }
+    .fusion-box {
+      background: rgba(245,237,214,0.05);
+      border: 1px solid rgba(245,237,214,0.1);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    /* Heatmap + original */
+    .images-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .img-box img {
+      width: 100%; border-radius: 12px;
+      display: block;
+      border: 1px solid rgba(245,237,214,0.1);
+    }
+
+    /* Treatment */
+    .treatment-block {
+      background: rgba(245,237,214,0.03);
+      border: 1px solid rgba(245,237,214,0.08);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+
+    .step-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(245,237,214,0.05);
+    }
+
+    /* ── DISEASES SECTION ── */
+    .diseases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .disease-card {
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(245,237,214,0.08);
+      transition: transform 0.3s;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0;
+      position: relative;
+    }
+
+    .step-circle {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--earth);
+      border: 2px solid rgba(168,212,102,0.3);
+      display: grid; place-items: center;
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+      position: relative; z-index: 1;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid rgba(245,237,214,0.07);
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+      nav { padding: 14px 20px; }
+      .nav-links { display: none; }
+      section { padding: 60px 20px; }
+      .hero { padding: 100px 20px 50px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .images-grid { grid-template-columns: 1fr; }
+      .fusion-row { grid-template-columns: 1fr; }
+      footer { padding: 24px 20px; flex-direction: column; align-items: flex-start; }
+      .hero-stats { gap: 24px; }
+    }
+    </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
-  <div class="nav-logo">
-    <div class="dot"></div>
-    PotatoAI
-  </div>
-  <div class="nav-links">
-    <a href="#detect">Detect</a>
-    <a href="#diseases">Diseases</a>
-    <a href="#how">How it Works</a>
-  </div>
-  <a href="#detect" class="btn-primary" style="padding:10px 20px;font-size:0.85rem">
-    Try Now →
-  </a>
+    <div class="nav-logo">
+        <div class="dot"></div>
+        PotatoAI
+    </div>
+    <div class="nav-links">
+        <a href="#detect">Detect</a>
+        <a href="#diseases">Diseases</a>
+        <a href="#how">How it Works</a>
+    </div>
+    <a href="#detect" class="btn-primary" style="padding:10px 20px;font-size:0.85rem">
+        Try Now →
+    </a>
 </nav>
 
-<!-- HERO -->
 <div class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-content">
-    <div class="hero-badge">
-      <span>●</span> AI-Powered Crop Protection
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        <div class="hero-badge">
+            <span>●</span> AI-Powered Crop Protection
+        </div>
+        <h1>
+            Detect Potato<br>
+            <span class="accent">Disease</span> Before<br>
+            It <span class="accent2">Spreads</span>
+        </h1>
+        <p class="hero-desc">
+            Take a leaf photo or enter field conditions. 
+            Our mobile-ready AI pinpoints disease instantly 
+            to give farmers actionable treatment guidance.
+        </p>
+        <div class="hero-actions">
+            <a href="#detect" class="btn-primary">📸 Start Diagnosis</a>
+            <a href="#diseases" class="btn-ghost">Learn Diseases</a>
+        </div>
+        <div class="hero-stats">
+            <div class="stat">
+                <div class="stat-num">99%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="stat">
+                <div class="stat-num">Light</div>
+                <div class="stat-label">Deployable</div>
+            </div>
+            <div class="stat">
+                <div class="stat-num">&lt;2s</div>
+                <div class="stat-label">Inference</div>
+            </div>
+        </div>
     </div>
-    <h1>
-      Detect Potato<br>
-      <span class="accent">Disease</span> Before<br>
-      It <span class="accent2">Spreads</span>
-    </h1>
-    <p class="hero-desc">
-      Upload a leaf photo or enter field conditions. 
-      Our AI pinpoints disease with Grad-CAM heatmaps 
-      and gives farmers instant treatment guidance.
-    </p>
-    <div class="hero-actions">
-      <a href="#detect" class="btn-primary">🔍 Start Diagnosis</a>
-      <a href="#diseases" class="btn-ghost">Learn Diseases</a>
-    </div>
-    <div class="hero-stats">
-      <div class="stat">
-        <div class="stat-num">99%</div>
-        <div class="stat-label">Accuracy</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">3</div>
-        <div class="stat-label">AI Models</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">&lt;2s</div>
-        <div class="stat-label">Diagnosis Time</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">2</div>
-        <div class="stat-label">Input Modes</div>
-      </div>
-    </div>
-  </div>
 </div>
 
-<!-- FEATURES -->
 <section>
-  <div class="section-label">Why PotatoAI</div>
-  <div class="section-title">Built for the field,<br>not the lab</div>
-  <div class="section-sub">Three novel AI contributions working together to give farmers real, actionable answers.</div>
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(168,212,102,0.12)">🧠</div>
-      <h3>PLDNet Architecture</h3>
-      <p>Hybrid CNN-Transformer model with custom AFpM activation. Replicates and improves the original research paper with 100% accuracy on PlantVillage dataset.</p>
-      <span class="tag" style="background:rgba(168,212,102,0.12);color:var(--lime)">32M → 5M params</span>
+    <div class="section-label">Why PotatoAI</div>
+    <div class="section-title">Built for the field,<br>not the lab</div>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(168,212,102,0.12)">🧠</div>
+            <h3>PLDNet Architecture</h3>
+            <p>Hybrid CNN-Transformer model with custom AFpM activation. Optimized for high precision in diverse light conditions.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(232,168,71,0.12)">🔥</div>
+            <h3>Grad-CAM Heatmaps</h3>
+            <p>Explainable AI that highlights infected tissue directly on your photo. No black-box guesses.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(107,175,94,0.12)">⚡</div>
+            <h3>Mobile-First</h3>
+            <p>LightPLDNet achieves 99.5% accuracy with only 5M parameters. Fast execution on smartphone hardware.</p>
+        </div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(232,168,71,0.12)">🔥</div>
-      <h3>Grad-CAM Heatmaps</h3>
-      <p>Visual explainability showing exactly where disease appears on the leaf. Red regions indicate infected tissue — no black-box predictions.</p>
-      <span class="tag" style="background:rgba(232,168,71,0.12);color:var(--amber)">Novel contribution</span>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(107,175,94,0.12)">⚡</div>
-      <h3>LightPLDNet</h3>
-      <p>6× compressed model using EfficientNetB0 backbone. Achieves 99.5% accuracy with only 5M parameters — deployable on farmer smartphones.</p>
-      <span class="tag" style="background:rgba(107,175,94,0.12);color:var(--sprout)">Mobile-ready</span>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(192,82,42,0.12)">🔗</div>
-      <h3>Multimodal Fusion</h3>
-      <p>Combines leaf image analysis (PLDNet, 70%) with weather/field data (KNN, 30%) for the most accurate possible diagnosis.</p>
-      <span class="tag" style="background:rgba(192,82,42,0.12);color:#E8714A">Research novelty</span>
-    </div>
-  </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- DETECT SECTION -->
 <section id="detect">
-  <div class="section-label">Diagnosis Tool</div>
-  <div class="section-title">Analyse Your Crop</div>
-  <div class="section-sub">Choose your input method. Use both together for maximum accuracy.</div>
+    <div class="section-label">Diagnosis Tool</div>
+    <div class="section-title">Analyse Your Crop</div>
+    <div class="section-sub">Capture a photo or provide weather metrics for a combined diagnosis.</div>
 
-  <div class="app-wrapper">
-    <div class="app-tabs">
-      <button class="app-tab active" onclick="switchTab('image', this)">📷 Leaf Photo</button>
-      <button class="app-tab" onclick="switchTab('weather', this)">🌦️ Weather Data</button>
-      <button class="app-tab" onclick="switchTab('fusion', this)">🔗 Both (Best)</button>
-    </div>
+    <div class="app-wrapper">
+        <div class="app-tabs">
+            <button class="app-tab active" onclick="switchTab('image', this)">📸 Leaf Photo</button>
+            <button class="app-tab" onclick="switchTab('weather', this)">🌦️ Weather</button>
+            <button class="app-tab" onclick="switchTab('fusion', this)">🔗 Fusion</button>
+        </div>
 
-    <!-- IMAGE TAB -->
-    <div id="tab-image" class="tab-panel active">
-      <div id="img-form">
-        <div class="upload-zone" id="uploadZone">
-          <input type="file" id="imgFile" accept="image/*" onchange="handleImageUpload(this, 'imgPreview')">
-          <span class="upload-icon">🌿</span>
-          <h3>Drop leaf photo here</h3>
-          <p>or click to browse — JPG, PNG supported</p>
+        <div id="tab-image" class="tab-panel active">
+            <div id="img-form">
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="imgFile" accept="image/*" capture="camera" onchange="handleImageUpload(this, 'imgPreview')">
+                    <span class="upload-icon">📸</span>
+                    <h3>Tap to capture leaf photo</h3>
+                    <p>Will open your camera on mobile devices</p>
+                </div>
+                <img id="imgPreview" class="preview-img">
+                <button class="submit-btn" onclick="predictImage()" id="imgBtn" style="margin-top:20px">
+                    <span>🔍</span> Run AI Analysis
+                </button>
+            </div>
+            <div class="loading-state" id="img-loading">
+                <div class="loader"></div>
+                <h3>Analysing leaf tissue...</h3>
+            </div>
+            <div class="result-state" id="img-result"></div>
         </div>
-        <img id="imgPreview" class="preview-img">
-        <button class="submit-btn" onclick="predictImage()" id="imgBtn" style="margin-top:20px">
-          <span>🔍</span> Analyse Leaf
-        </button>
-      </div>
-      <div class="loading-state" id="img-loading">
-        <div class="loader"></div>
-        <h3>Analysing leaf tissue...</h3>
-        <p>Running PLDNet + generating Grad-CAM heatmap</p>
-      </div>
-      <div class="result-state" id="img-result"></div>
-    </div>
 
-    <!-- WEATHER TAB -->
-    <div id="tab-weather" class="tab-panel">
-      <div id="weather-form">
-        <div class="form-grid">
-          <div class="field">
-            <label>🌡️ Temperature (°C)</label>
-            <input type="number" id="temp" value="22" step="0.1">
-          </div>
-          <div class="field">
-            <label>💧 Humidity (%)</label>
-            <input type="number" id="humidity" value="75" step="0.1">
-          </div>
-          <div class="field">
-            <label>💨 Wind Speed (km/h)</label>
-            <input type="number" id="wind_speed" value="5" step="0.1">
-          </div>
-          <div class="field">
-            <label>🧭 Wind Bearing (°)</label>
-            <input type="number" id="wind_bearing" value="180" step="1">
-          </div>
-          <div class="field">
-            <label>👁️ Visibility (km)</label>
-            <input type="number" id="visibility" value="10" step="0.1">
-          </div>
-          <div class="field">
-            <label>🔵 Pressure (hPa)</label>
-            <input type="number" id="pressure" value="1015" step="0.1">
-          </div>
+        <div id="tab-weather" class="tab-panel">
+            <div id="weather-form">
+                <div class="form-grid">
+                    <div class="field"><label>🌡️ Temp (°C)</label><input type="number" id="temp" value="22"></div>
+                    <div class="field"><label>💧 Humidity (%)</label><input type="number" id="humidity" value="75"></div>
+                    <div class="field"><label>💨 Wind (km/h)</label><input type="number" id="wind_speed" value="5"></div>
+                    <div class="field"><label>🧭 Bearing</label><input type="number" id="wind_bearing" value="180"></div>
+                    <div class="field"><label>👁️ Visibility</label><input type="number" id="visibility" value="10"></div>
+                    <div class="field"><label>🔵 Pressure</label><input type="number" id="pressure" value="1015"></div>
+                </div>
+                <button class="submit-btn" onclick="predictText()">
+                    <span>🔍</span> Analyse Weather
+                </button>
+            </div>
+            <div class="loading-state" id="weather-loading"><div class="loader"></div><h3>Checking KNN...</h3></div>
+            <div class="result-state" id="weather-result"></div>
         </div>
-        <button class="submit-btn" onclick="predictText()">
-          <span>🔍</span> Analyse Conditions
-        </button>
-      </div>
-      <div class="loading-state" id="weather-loading">
-        <div class="loader"></div>
-        <h3>Running KNN analysis...</h3>
-        <p>Processing weather conditions</p>
-      </div>
-      <div class="result-state" id="weather-result"></div>
-    </div>
 
-    <!-- FUSION TAB -->
-    <div id="tab-fusion" class="tab-panel">
-      <div id="fusion-form">
-        <div class="upload-zone" style="margin-bottom:20px">
-          <input type="file" id="fusFile" accept="image/*" onchange="handleImageUpload(this,'fusPreview')">
-          <span class="upload-icon">🌿</span>
-          <h3>Upload leaf photo</h3>
-          <p>Combined with weather for best accuracy</p>
+        <div id="tab-fusion" class="tab-panel">
+            <div id="fusion-form">
+                <div class="upload-zone" style="margin-bottom:20px">
+                    <input type="file" id="fusFile" accept="image/*" capture="camera" onchange="handleImageUpload(this,'fusPreview')">
+                    <span class="upload-icon">📸</span>
+                    <h3>Capture leaf for Fusion</h3>
+                    <p>Combines image (70%) with weather (30%)</p>
+                </div>
+                <img id="fusPreview" class="preview-img">
+                <div class="form-grid" style="margin-top:20px">
+                    <div class="field"><label>🌡️ Temp</label><input type="number" id="ftemp" value="22"></div>
+                    <div class="field"><label>💧 Humidity</label><input type="number" id="fhumidity" value="75"></div>
+                    <div class="field"><label>💨 Wind</label><input type="number" id="fwind_speed" value="5"></div>
+                    <div class="field"><label>🧭 Bearing</label><input type="number" id="fwind_bearing" value="180"></div>
+                    <div class="field"><label>👁️ Visibility</label><input type="number" id="fvisibility" value="10"></div>
+                    <div class="field"><label>🔵 Pressure</label><input type="number" id="fpressure" value="1015"></div>
+                </div>
+                <button class="submit-btn" onclick="predictFusion()">
+                    <span>🔗</span> Fusion Analysis
+                </button>
+            </div>
+            <div class="loading-state" id="fusion-loading"><div class="loader"></div><h3>Processing Hybrid Input...</h3></div>
+            <div class="result-state" id="fusion-result"></div>
         </div>
-        <img id="fusPreview" class="preview-img">
-        <div class="form-grid" style="margin-top:20px">
-          <div class="field">
-            <label>🌡️ Temperature (°C)</label>
-            <input type="number" id="ftemp" value="22" step="0.1">
-          </div>
-          <div class="field">
-            <label>💧 Humidity (%)</label>
-            <input type="number" id="fhumidity" value="75" step="0.1">
-          </div>
-          <div class="field">
-            <label>💨 Wind Speed</label>
-            <input type="number" id="fwind_speed" value="5" step="0.1">
-          </div>
-          <div class="field">
-            <label>🧭 Wind Bearing</label>
-            <input type="number" id="fwind_bearing" value="180" step="1">
-          </div>
-          <div class="field">
-            <label>👁️ Visibility</label>
-            <input type="number" id="fvisibility" value="10" step="0.1">
-          </div>
-          <div class="field">
-            <label>🔵 Pressure</label>
-            <input type="number" id="fpressure" value="1015" step="0.1">
-          </div>
-        </div>
-        <button class="submit-btn" onclick="predictFusion()">
-          <span>🔗</span> Fusion Diagnosis
-        </button>
-      </div>
-      <div class="loading-state" id="fusion-loading">
-        <div class="loader"></div>
-        <h3>Running fusion analysis...</h3>
-        <p>Combining PLDNet (70%) + KNN (30%)</p>
-      </div>
-      <div class="result-state" id="fusion-result"></div>
     </div>
-  </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- DISEASES -->
 <section id="diseases">
-  <div class="section-label">Disease Reference</div>
-  <div class="section-title">Know what to look for</div>
-  <div class="section-sub">Three classes our AI distinguishes with near-perfect accuracy.</div>
-  <div class="diseases-grid">
-    <div class="disease-card healthy">
-      <div class="disease-card-header">
-        <span class="disease-emoji">🌿</span>
-        <div>
-          <h3>Healthy Plant</h3>
-          <p>No pathogen detected</p>
+    <div class="section-label">Reference</div>
+    <div class="section-title">Know the symptoms</div>
+    <div class="diseases-grid">
+        <div class="disease-card healthy">
+            <div class="disease-card-header">
+                <span class="disease-emoji">🌿</span>
+                <div><h3>Healthy</h3><p>No pathogen</p></div>
+            </div>
         </div>
-      </div>
-      <div class="disease-card-body">
-        Uniform green colour, no spots, lesions, or wilting. Leaf surface intact with normal venation. Continue regular monitoring and preventive care.
-        <br><br>
-        <span class="severity-badge">● No Action Needed</span>
-      </div>
-    </div>
-    <div class="disease-card warning">
-      <div class="disease-card-header">
-        <span class="disease-emoji">🍂</span>
-        <div>
-          <h3>Early Blight</h3>
-          <p>Alternaria solani</p>
+        <div class="disease-card warning">
+            <div class="disease-card-header">
+                <span class="disease-emoji">🍂</span>
+                <div><h3>Early Blight</h3><p>Concentric rings</p></div>
+            </div>
         </div>
-      </div>
-      <div class="disease-card-body">
-        Circular dark brown lesions with concentric rings, surrounded by yellow halo. Starts on older leaves. Fungal — spreads through spores in humid conditions.
-        <br><br>
-        <span class="severity-badge">⚠ Act Within 3–5 Days</span>
-      </div>
-    </div>
-    <div class="disease-card danger">
-      <div class="disease-card-header">
-        <span class="disease-emoji">🦠</span>
-        <div>
-          <h3>Late Blight</h3>
-          <p>Phytophthora infestans</p>
+        <div class="disease-card danger">
+            <div class="disease-card-header">
+                <span class="disease-emoji">🦠</span>
+                <div><h3>Late Blight</h3><p>Fast spreading</p></div>
+            </div>
         </div>
-      </div>
-      <div class="disease-card-body">
-        Water-soaked lesions that turn brown-black rapidly. White fungal growth on leaf undersides. Spreads explosively in cool, wet weather. Caused the Irish Famine.
-        <br><br>
-        <span class="severity-badge">🚨 Urgent — 24 Hours</span>
-      </div>
     </div>
-  </div>
 </section>
 
-<div class="divider"></div>
-
-<!-- HOW IT WORKS -->
 <section id="how">
-  <div class="section-label">Process</div>
-  <div class="section-title">How PotatoAI works</div>
-  <div class="section-sub">From farm to diagnosis in under 2 seconds.</div>
-  <div class="steps-row">
-    <div class="step-block">
-      <div class="step-circle">📸</div>
-      <h4>Capture</h4>
-      <p>Farmer photographs the affected leaf or notes field weather conditions</p>
+    <div class="section-label">Process</div>
+    <div class="steps-row">
+        <div class="step-block"><div class="step-circle">📸</div><h4>Capture</h4><p>Take a sharp photo of the leaf</p></div>
+        <div class="step-block"><div class="step-circle">🧠</div><h4>Analyse</h4><p>LightPLDNet processes tissue data</p></div>
+        <div class="step-block"><div class="step-circle">🔥</div><h4>Explain</h4><p>Grad-CAM shows the problem</p></div>
+        <div class="step-block"><div class="step-circle">💊</div><h4>Act</h4><p>Get instant treatment steps</p></div>
     </div>
-    <div class="step-block">
-      <div class="step-circle">🧠</div>
-      <h4>Analyse</h4>
-      <p>LightPLDNet processes the image through 5M learned parameters in milliseconds</p>
-    </div>
-    <div class="step-block">
-      <div class="step-circle">🔥</div>
-      <h4>Explain</h4>
-      <p>Grad-CAM generates a heatmap showing the exact disease region on the leaf</p>
-    </div>
-    <div class="step-block">
-      <div class="step-circle">💊</div>
-      <h4>Act</h4>
-      <p>Specific treatment steps and urgency level delivered instantly to the farmer</p>
-    </div>
-  </div>
 </section>
 
-<!-- FOOTER -->
 <footer>
-  <div class="footer-logo">🥔 PotatoAI</div>
-  <div class="footer-note">BTech Research Project — AI-powered crop disease detection</div>
-  <div class="footer-tags">
-    <span class="footer-tag">PLDNet</span>
-    <span class="footer-tag">Grad-CAM</span>
-    <span class="footer-tag">KNN Fusion</span>
-    <span class="footer-tag">LightPLDNet</span>
-  </div>
+    <div class="footer-logo">🥔 PotatoAI</div>
+    <div class="footer-note">BTech Research — Mobile Deployable Crop Solution</div>
 </footer>
 
 <script>
-// ── TAB SWITCHING ──
 function switchTab(name, btn) {
-  document.querySelectorAll('.app-tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.app-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
 }
 
-// ── IMAGE PREVIEW ──
 function handleImageUpload(input, previewId) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = document.getElementById(previewId);
-    img.src = e.target.result;
-    img.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = document.getElementById(previewId);
+        img.src = e.target.result;
+        img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
 }
 
-// ── SHOW/HIDE STATES ──
 function showLoading(prefix) {
-  document.getElementById(prefix + '-form') &&
-    (document.getElementById(prefix + '-form').style.display = 'none');
-  document.getElementById(prefix + '-loading').style.display = 'block';
-  document.getElementById(prefix + '-result').style.display  = 'none';
+    document.getElementById(prefix + '-form').style.display = 'none';
+    document.getElementById(prefix + '-loading').style.display = 'block';
+    document.getElementById(prefix + '-result').style.display  = 'none';
 }
 
 function showResult(prefix) {
-  document.getElementById(prefix + '-loading').style.display = 'none';
-  document.getElementById(prefix + '-result').style.display  = 'block';
-  // animate confidence bar
-  setTimeout(() => {
-    const fill = document.querySelector('.conf-fill');
-    if (fill) fill.style.width = fill.dataset.width;
-  }, 100);
+    document.getElementById(prefix + '-loading').style.display = 'none';
+    document.getElementById(prefix + '-result').style.display  = 'block';
+    setTimeout(() => {
+        const fill = document.querySelector(`#${prefix}-result .conf-fill`);
+        if (fill) fill.style.width = fill.dataset.width;
+    }, 100);
 }
 
 function resetView(prefix) {
-  document.getElementById(prefix + '-form').style.display    = 'block';
-  document.getElementById(prefix + '-result').style.display  = 'none';
-  document.getElementById(prefix + '-loading').style.display = 'none';
+    document.getElementById(prefix + '-form').style.display    = 'block';
+    document.getElementById(prefix + '-result').style.display  = 'none';
+    document.getElementById(prefix + '-loading').style.display = 'none';
 }
 
-// ── BUILD RESULT HTML ──
 function buildResultHTML(data, prefix) {
-  const colorClass = data.color === 'green'  ? 'healthy'
-                   : data.color === 'orange' ? 'warning' : 'danger';
+    const colorClass = data.color === 'green' ? 'healthy' : data.color === 'orange' ? 'warning' : 'danger';
+    
+    let extraHTML = '';
+    if (data.mode === 'fusion') {
+        extraHTML = `
+        <div class="fusion-row">
+            <div class="fusion-box"><div class="fval">${data.image_conf}%</div><div class="flbl">Image</div></div>
+            <div class="fusion-box"><div class="fval">${data.text_conf}%</div><div class="flbl">Weather</div></div>
+            <div class="fusion-box"><div class="fval">${data.confidence}%</div><div class="flbl">Fused</div></div>
+        </div>`;
+    }
 
-  let fusionHTML = '';
-  if (data.mode === 'fusion') {
-    fusionHTML = `
-    <div class="fusion-row">
-      <div class="fusion-box">
-        <div class="fval">${data.image_conf}%</div>
-        <div class="flbl">📷 Image</div>
-      </div>
-      <div class="fusion-box">
-        <div class="fval">${data.text_conf}%</div>
-        <div class="flbl">🌦️ Weather</div>
-      </div>
-      <div class="fusion-box">
-        <div class="fval">${data.confidence}%</div>
-        <div class="flbl">🔗 Combined</div>
-      </div>
-    </div>`;
-  }
-
-  let imagesHTML = '';
-  if (data.gradcam) {
-    imagesHTML = `
+    let imageSection = data.gradcam ? `
     <div class="images-grid">
-      <div class="img-box">
-        <img src="${data.gradcam}" alt="Grad-CAM heatmap">
-        <div class="img-caption">🔴 Grad-CAM — disease region highlighted</div>
-      </div>
-    </div>`;
-  }
-
-  const stepsHTML = data.steps.map((s, i) => `
-    <div class="step-item">
-      <div class="step-num">${i+1}</div>
-      <div class="step-text">${s}</div>
-    </div>`).join('');
-
-  const el = document.getElementById(prefix + '-result');
-  el.innerHTML = `
-    <div class="result-hero ${colorClass}">
-      <div class="result-disease">${data.disease}</div>
-      <div class="result-urgency">${data.urgency}</div>
-      <div class="conf-row">
-        <span class="conf-label">Confidence</span>
-        <div class="conf-bar">
-          <div class="conf-fill" data-width="${data.confidence}%" style="width:0"></div>
+        <div class="img-box">
+            <img src="${data.gradcam}" alt="Heatmap">
+            <div style="font-size:0.75rem; text-align:center; padding:10px; color:rgba(255,255,255,0.5)">AI Attention Region (Grad-CAM)</div>
         </div>
-        <span class="conf-pct">${data.confidence}%</span>
-      </div>
-    </div>
-    ${fusionHTML}
-    ${imagesHTML}
-    <div class="treatment-block">
-      <h4>Treatment Steps</h4>
-      ${stepsHTML}
-    </div>
-    <div class="prevention-strip">
-      <span>🛡️</span>
-      <span><strong>Prevention:</strong> ${data.prevention}</span>
-    </div>
-    <button class="reset-btn" onclick="resetView('${prefix}')">← Analyse another sample</button>`;
+    </div>` : '';
 
-  showResult(prefix);
+    const steps = data.steps.map((s, i) => `
+        <div class="step-item">
+            <div style="background:var(--lime); color:var(--soil); width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:0.7rem; font-weight:bold; flex-shrink:0; margin-top:2px;">${i+1}</div>
+            <div style="font-size:0.9rem">${s}</div>
+        </div>`).join('');
+
+    const el = document.getElementById(prefix + '-result');
+    el.innerHTML = `
+        <div class="result-hero ${colorClass}">
+            <div class="result-disease">${data.disease}</div>
+            <div style="font-size:0.85rem; margin-bottom:15px; opacity:0.9">${data.urgency}</div>
+            <div class="conf-row">
+                <div class="conf-bar"><div class="conf-fill" data-width="${data.confidence}%" style="width:0"></div></div>
+                <div style="font-weight:bold; font-size:1rem">${data.confidence}%</div>
+            </div>
+        </div>
+        ${extraHTML}
+        ${imageSection}
+        <div class="treatment-block">
+            <div style="font-size:0.7rem; color:rgba(255,255,255,0.4); text-transform:uppercase; margin-bottom:10px; font-weight:bold">Action Plan</div>
+            ${steps}
+        </div>
+        <button class="reset-btn" onclick="resetView('${prefix}')">← Reset</button>`;
+    showResult(prefix);
 }
 
-// ── PREDICTIONS ──
 async function predictImage() {
-  const file = document.getElementById('imgFile').files[0];
-  if (!file) { alert('Please upload a leaf photo first!'); return; }
-  showLoading('img');
-  try {
+    const file = document.getElementById('imgFile').files[0];
+    if (!file) { alert('Capture a leaf photo first!'); return; }
+    showLoading('img');
     const form = new FormData();
     form.append('image', file);
-    const res  = await fetch('/predict/image', { method: 'POST', body: form });
-    const data = await res.json();
-    buildResultHTML(data, 'img');
-  } catch(e) {
-    alert('Error: ' + e.message);
-    resetView('img');
-  }
+    try {
+        const res = await fetch('/predict/image', { method: 'POST', body: form });
+        const data = await res.json();
+        buildResultHTML(data, 'img');
+    } catch(e) { alert('Error: ' + e.message); resetView('img'); }
 }
 
 async function predictText() {
-  showLoading('weather');
-  try {
+    showLoading('weather');
     const payload = {
-      temperature:  document.getElementById('temp').value,
-      humidity:     document.getElementById('humidity').value,
-      wind_speed:   document.getElementById('wind_speed').value,
-      wind_bearing: document.getElementById('wind_bearing').value,
-      visibility:   document.getElementById('visibility').value,
-      pressure:     document.getElementById('pressure').value
+        temperature: document.getElementById('temp').value,
+        humidity: document.getElementById('humidity').value,
+        wind_speed: document.getElementById('wind_speed').value,
+        wind_bearing: document.getElementById('wind_bearing').value,
+        visibility: document.getElementById('visibility').value,
+        pressure: document.getElementById('pressure').value
     };
-    const res  = await fetch('/predict/text', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    buildResultHTML(data, 'weather');
-  } catch(e) {
-    alert('Error: ' + e.message);
-    resetView('weather');
-  }
+    try {
+        const res = await fetch('/predict/text', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+        const data = await res.json();
+        buildResultHTML(data, 'weather');
+    } catch(e) { alert('Error: ' + e.message); resetView('weather'); }
 }
 
 async function predictFusion() {
-  const file = document.getElementById('fusFile').files[0];
-  if (!file) { alert('Please upload a leaf photo first!'); return; }
-  showLoading('fusion');
-  try {
+    const file = document.getElementById('fusFile').files[0];
+    if (!file) { alert('Capture a leaf photo first!'); return; }
+    showLoading('fusion');
     const form = new FormData();
-    form.append('image',        file);
-    form.append('temperature',  document.getElementById('ftemp').value);
-    form.append('humidity',     document.getElementById('fhumidity').value);
-    form.append('wind_speed',   document.getElementById('fwind_speed').value);
+    form.append('image', file);
+    form.append('temperature', document.getElementById('ftemp').value);
+    form.append('humidity', document.getElementById('fhumidity').value);
+    form.append('wind_speed', document.getElementById('fwind_speed').value);
     form.append('wind_bearing', document.getElementById('fwind_bearing').value);
-    form.append('visibility',   document.getElementById('fvisibility').value);
-    form.append('pressure',     document.getElementById('fpressure').value);
-    const res  = await fetch('/predict/fusion', { method: 'POST', body: form });
-    const data = await res.json();
-    buildResultHTML(data, 'fusion');
-  } catch(e) {
-    alert('Error: ' + e.message);
-    resetView('fusion');
-  }
-}
-
-// drag-over effect
-const zone = document.getElementById('uploadZone');
-if (zone) {
-  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop',      e => { e.preventDefault(); zone.classList.remove('drag-over'); });
+    form.append('visibility', document.getElementById('fvisibility').value);
+    form.append('pressure', document.getElementById('fpressure').value);
+    try {
+        const res = await fetch('/predict/fusion', { method: 'POST', body: form });
+        const data = await res.json();
+        buildResultHTML(data, 'fusion');
+    } catch(e) { alert('Error: ' + e.message); resetView('fusion'); }
 }
 </script>
 </body>

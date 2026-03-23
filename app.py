@@ -8,7 +8,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.cm as cm
 from PIL import Image
-from afpm_layer import AFpM
+from afpm_layer import AFpM 
 import os
 
 app = Flask(__name__)
@@ -137,30 +137,46 @@ def home():
 
 @app.route('/predict/image', methods=['POST'])
 def predict_image():
-    file     = request.files['image']
-    img      = Image.open(file).convert('RGB').resize((224, 224))
-    img_arr  = np.array(img)
+    file = request.files['image']
+    img = Image.open(file).convert('RGB').resize((224, 224))
+    img_arr = np.array(img)
     original = img_arr.copy()
     img_norm = np.expand_dims(img_arr / 255.0, axis=0)
 
     heatmap, pred_idx, probs = run_gradcam(img_norm, pldnet)
-    pred_raw    = PLDNET_CLASSES[pred_idx]
-    confidence  = float(probs[0][pred_idx]) * 100
+    confidence = float(probs[0][pred_idx]) * 100
+    pred_raw = PLDNET_CLASSES[pred_idx]
+
+    # --- NEW LOGIC: Threshold for "None/Healthy" ---
+    # If confidence is low or model predicts the "healthy" index
+    if confidence < 70.0 or 'healthy' in pred_raw.lower():
+        disease = 'Healthy'
+        info = TREATMENT['Healthy']
+        # Optionally provide a 'None' message if confidence is extremely low
+        if confidence < 40.0:
+            disease = "Unknown / Not a Potato Leaf"
+            info = {
+                'urgency': '❓ Input not recognized',
+                'color': 'gray',
+                'steps': ['Ensure the leaf is centered', 'Check lighting', 'Try a clearer photo'],
+                'prevention': 'Please upload a clear image of a potato leaf.'
+            }
+    else:
+        disease = map_pldnet_to_name(pred_raw)
+        info = TREATMENT[disease]
+
     gradcam_b64 = overlay_to_base64(original, heatmap)
-    disease     = map_pldnet_to_name(pred_raw)
-    info        = TREATMENT[disease]
 
     return jsonify({
-        'mode':       'image',
-        'disease':    disease,
+        'mode': 'image',
+        'disease': disease,
         'confidence': round(confidence, 1),
-        'urgency':    info['urgency'],
-        'color':      info['color'],
-        'steps':      info['steps'],
+        'urgency': info['urgency'],
+        'color': info['color'],
+        'steps': info['steps'],
         'prevention': info['prevention'],
-        'gradcam':    gradcam_b64
+        'gradcam': gradcam_b64
     })
-
 
 @app.route('/predict/text', methods=['POST'])
 def predict_text():
