@@ -82,6 +82,17 @@ print(f"KNN features: {features}")
 print(f"Label map: {label_map}")
 print("All models loaded.")
 
+# Warm up TF models so the first real request is fast.
+# Without this, the first predict() call compiles the graph and can take 60s+.
+print("Warming up models...")
+_dummy = np.zeros((1, 224, 224, 3), dtype=np.float32)
+LEAF_SCREEN_MODEL.predict(_dummy, verbose=0)
+POTATO_IMAGE_MODEL.predict(_dummy, verbose=0)
+if TOMATO_IMAGE_MODEL is not None:
+    TOMATO_IMAGE_MODEL.predict(_dummy, verbose=0)
+del _dummy
+print("Warm-up done. Server is ready.")
+
 
 IMAGE_PIPELINES = {
     "potato": {
@@ -300,13 +311,17 @@ def health():
 
 @app.route("/predict/image", methods=["POST"])
 def predict_image():
-    crop = request.form.get("crop", "potato").strip().lower()
-    original, img_norm = read_image_from_request()
-    response, error = classify_leaf_image(crop, original, img_norm)
-    if error:
-        message, status = error
-        return jsonify({"error": message}), status
-    return jsonify(response)
+    try:
+        crop = request.form.get("crop", "potato").strip().lower()
+        original, img_norm = read_image_from_request()
+        response, error = classify_leaf_image(crop, original, img_norm)
+        if error:
+            message, status = error
+            return jsonify({"error": message}), status
+        return jsonify(response)
+    except Exception as e:
+        print(f"Error in predict_image: {e}")
+        return jsonify({"error": f"Image analysis failed: {str(e)}"}), 500
 
 
 @app.route("/predict/text", methods=["POST"])
