@@ -12,6 +12,23 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 
+# --- Patch: strip 'quantization_config' from layer configs during model loading ---
+# Models saved with newer Keras versions include this field, but the version
+# bundled with TF on this Python may not recognise it during deserialization.
+import keras.src.ops.operation as _keras_op
+
+_orig_from_config = _keras_op.Operation.from_config.__func__
+
+
+@classmethod
+def _safe_from_config(cls, config):
+    config.pop("quantization_config", None)
+    return _orig_from_config(cls, config)
+
+
+_keras_op.Operation.from_config = _safe_from_config
+# --- End patch ---
+
 from afpm_layer import AFpM
 
 matplotlib.use("Agg")
