@@ -2,11 +2,11 @@ services:
   - type: web
     name: plant-disease-detector-api
     runtime: python
-    # This command tells pip to prefer pre-built versions and avoids the build-system error
-    buildCommand: python -m pip install --upgrade pip setuptools wheel && pip install --prefer-binary -r requirements.txt
+    # This command checks the version and then installs using binaries primarily
+    buildCommand: python --version && python -m pip install --upgrade pip setuptools wheel && pip install --prefer-binary -r requirements.txt
     startCommand: gunicorn app:app -c gunicorn.conf.py
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: 3.10.14
       - key: CORS_ORIGINS
         sync: false
