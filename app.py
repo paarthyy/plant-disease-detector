@@ -86,19 +86,9 @@ print(f"KNN features: {features}")
 print(f"Label map: {label_map}")
 print("All models loaded.")
 
-# Warm up TF models so the first real request is fast.
-# Without this, the first predict() call compiles the graph and can take 60s+.
-print("Warming up models...")
-if LEAF_SCREEN_MODEL is not None:
-    _dummy_leaf = np.zeros((1,) + LEAF_SCREEN_MODEL.input_shape[1:], dtype=np.float32)
-    LEAF_SCREEN_MODEL.predict(_dummy_leaf, verbose=0)
-if POTATO_IMAGE_MODEL is not None:
-    _dummy_potato = np.zeros((1,) + POTATO_IMAGE_MODEL.input_shape[1:], dtype=np.float32)
-    POTATO_IMAGE_MODEL.predict(_dummy_potato, verbose=0)
-if TOMATO_IMAGE_MODEL is not None:
-    _dummy_tomato = np.zeros((1,) + TOMATO_IMAGE_MODEL.input_shape[1:], dtype=np.float32)
-    TOMATO_IMAGE_MODEL.predict(_dummy_tomato, verbose=0)
-print("Warm-up done. Server is ready.")
+print(f"KNN features: {features}")
+print(f"Label map: {label_map}")
+print("All models loaded.")
 
 
 IMAGE_PIPELINES = {
@@ -180,29 +170,12 @@ def get_last_conv(model):
 
 
 def run_gradcam(img_array, model):
-    last_conv = get_last_conv(model)
-    grad_model = tf.keras.models.Model(
-        inputs=model.inputs,
-        outputs=[model.get_layer(last_conv).output, model.output],
-    )
-
-    with tf.GradientTape() as tape:
-        conv_out, preds = grad_model(img_array, training=False)
-        pred_idx = tf.argmax(preds[0])
-        class_score = preds[:, pred_idx]
-
-    grads = tape.gradient(class_score, conv_out)
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-    conv_out = conv_out[0].numpy()
-    pooled_grads = pooled_grads.numpy()
-
-    for idx in range(pooled_grads.shape[-1]):
-        conv_out[:, :, idx] *= pooled_grads[idx]
-
-    heatmap = np.mean(conv_out, axis=-1)
-    heatmap = np.maximum(heatmap, 0)
-    heatmap = heatmap / (np.max(heatmap) + 1e-8)
-    return heatmap, int(pred_idx.numpy()), preds.numpy()
+    # Free Tier Server Optimization:
+    # Full GradCAM with tf.GradientTape causes Out-Of-Memory (OOM) crashes on 512MB servers.
+    # We bypass the heatmap generation to ensure the server remains stable and responsive.
+    preds = model.predict(img_array, verbose=0)
+    pred_idx = np.argmax(preds[0])
+    return None, int(pred_idx), preds
 
 
 def overlay_to_base64(original, heatmap):
@@ -272,18 +245,22 @@ def classify_leaf_image(crop_name, original, img_norm):
     disease = map_prediction_to_name(pred_raw)
     info = TREATMENT.get(disease, TREATMENT["Healthy"])
 
+    # Force garbage collection to free CNN memory spikes immediately
+    import gc
+    gc.collect()
+
     return {
         "mode": "image",
         "crop": crop_name,
         "scope": pipeline["scope"],
         "note": pipeline["note"],
         "disease": disease,
-        "confidence": round(float(probs[0][pred_idx]) * 100, 1),
+        "confidence": round(float(np.max(probs)) * 100, 1),
         "urgency": info["urgency"],
         "color": info["color"],
         "steps": info["steps"],
         "prevention": info["prevention"],
-        "gradcam": overlay_to_base64(original, heatmap),
+        "gradcam": None,
     }, None
 
 
@@ -425,7 +402,8 @@ def predict_fusion():
     disease = map_prediction_to_name(pred_raw)
     info = TREATMENT.get(disease, TREATMENT["Healthy"])
 
-    heatmap, _, _ = run_gradcam(img_norm, POTATO_IMAGE_MODEL)
+    import gc
+    gc.collect()
 
     return jsonify({
         "mode": "fusion",
