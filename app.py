@@ -12,6 +12,10 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 
+# --- Low Memory / Single Thread Optimizations for Free Tier Tiers ---
+tf.config.threading.set_inter_op_parallelism_threads(1)
+tf.config.threading.set_intra_op_parallelism_threads(1)
+
 # --- Patch: strip 'quantization_config' from layer configs during model loading ---
 # Models saved with newer Keras versions include this field, but the version
 # bundled with TF on this Python may not recognise it during deserialization.
