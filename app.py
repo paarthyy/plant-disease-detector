@@ -215,7 +215,8 @@ def classify_leaf_image(crop_name, original, img_norm):
     if model is None:
         return None, (f"{crop_name.title()} image model is not available on this server yet.", 400)
 
-    leaf_probs = LEAF_SCREEN_MODEL.predict(img_norm)
+    # Use direct callable instead of .predict() to avoid Gunicorn threading deadlocks
+    leaf_probs = LEAF_SCREEN_MODEL(img_norm, training=False)
     leaf_conf = float(np.max(leaf_probs))
 
     if leaf_conf <= 0.7:
@@ -240,7 +241,9 @@ def classify_leaf_image(crop_name, original, img_norm):
     else:
         model_input = img_norm
 
-    heatmap, pred_idx, probs = run_gradcam(model_input, model)
+    # Use direct callable instead of .predict() to avoid Gunicorn threading deadlocks
+    probs = model(model_input, training=False)
+    pred_idx = int(np.argmax(probs[0]))
     pred_raw = pipeline["classes"][pred_idx]
     disease = map_prediction_to_name(pred_raw)
     info = TREATMENT.get(disease, TREATMENT["Healthy"])
@@ -355,7 +358,8 @@ def predict_text():
 def predict_fusion():
     original, img_norm = read_image_from_request()
 
-    leaf_probs = LEAF_SCREEN_MODEL.predict(img_norm)
+    # Use direct callable instead of .predict() to avoid Gunicorn threading deadlocks
+    leaf_probs = LEAF_SCREEN_MODEL(img_norm, training=False)
     leaf_conf = float(np.max(leaf_probs))
     if leaf_conf <= 0.7:
         info = TREATMENT["Not a Leaf"]
@@ -375,7 +379,8 @@ def predict_fusion():
             "gradcam": None,
         })
 
-    img_probs = POTATO_IMAGE_MODEL.predict(img_norm)
+    # Use direct callable instead of .predict() to avoid Gunicorn threading deadlocks
+    img_probs = POTATO_IMAGE_MODEL(img_norm, training=False)
 
     knn_feat = np.array([[
         float(request.form["temperature"]),
