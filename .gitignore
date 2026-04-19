@@ -1,0 +1,13 @@
+node_modules/
+__pycache__/
+*.pyc
+.codex/
+.env
+.env.local
+.env.*.local
+dist/
+static/frontend/
+models/fusion_model.h5
+models/light_pldnet_final.h5
+models/light_pldnet.h5
+*.h5

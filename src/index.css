@@ -1,0 +1,225 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-page-glow text-slate-900 antialiased;
+    font-feature-settings: "ss01" 1, "cv01" 1;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(29, 43, 31, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(29, 43, 31, 0.03) 1px, transparent 1px);
+    background-size: 26px 26px;
+    opacity: 0.55;
+    z-index: 0;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(circle at 18% 20%, rgba(153, 187, 114, 0.16), transparent 22%),
+      radial-gradient(circle at 82% 16%, rgba(209, 177, 115, 0.12), transparent 18%),
+      radial-gradient(circle at 78% 78%, rgba(35, 69, 47, 0.08), transparent 20%);
+    filter: blur(18px);
+    animation: backgroundFloat 18s ease-in-out infinite alternate;
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@keyframes backgroundFloat {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(10px, -8px, 0) scale(1.03);
+  }
+  100% {
+    transform: translate3d(-12px, 10px, 0) scale(0.98);
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-[28px] border border-white/60 bg-white/65 shadow-panel backdrop-blur-xl transition duration-300;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .soft-card {
+    @apply rounded-3xl border border-[#1d2b1f]/10 bg-white/70 shadow-soft backdrop-blur transition duration-300;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pill-button {
+    @apply inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition duration-300;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .field-shell {
+    @apply rounded-2xl border border-[#1d2b1f]/10 bg-white/75 px-4 py-3 shadow-sm outline-none transition focus-within:border-moss/30 focus-within:ring-4 focus-within:ring-moss/10;
+  }
+
+  .pill-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -120%;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    transform: skewX(-18deg);
+    transition: left 550ms ease;
+  }
+
+  .pill-button:hover::before {
+    left: 130%;
+  }
+
+  .glass-panel::before,
+  .soft-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.34), transparent 28%);
+    opacity: 0.7;
+  }
+
+  .premium-glow {
+    position: relative;
+    transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+  }
+
+  .premium-glow::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(153, 187, 114, 0.18), transparent 32%),
+      radial-gradient(circle at 100% 90%, rgba(35, 69, 47, 0.12), transparent 35%);
+    opacity: 0;
+    transition: opacity 240ms ease;
+  }
+
+  .premium-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 28px 70px rgba(35, 69, 47, 0.16);
+    border-color: rgba(35, 69, 47, 0.18);
+  }
+
+  .premium-glow:hover::after {
+    opacity: 1;
+  }
+
+  .leaf-particle {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 999px 999px 0 999px;
+    background: linear-gradient(160deg, rgba(153, 187, 114, 0.85), rgba(35, 69, 47, 0.75));
+    box-shadow: 0 8px 22px rgba(35, 69, 47, 0.12);
+    filter: blur(0.2px);
+    transform-origin: center;
+  }
+
+  .noise-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.08;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='0.8'/%3E%3C/svg%3E");
+  }
+
+  .status-glow-healthy {
+    box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.12), 0 0 24px rgba(74, 222, 128, 0.18);
+  }
+
+  .status-glow-warning {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12), 0 0 24px rgba(251, 191, 36, 0.18);
+  }
+
+  .status-glow-danger {
+    box-shadow: 0 0 0 1px rgba(225, 29, 72, 0.12), 0 0 24px rgba(251, 113, 133, 0.18);
+  }
+
+  .scan-surface {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scan-surface::after {
+    content: "";
+    position: absolute;
+    inset: -20% 0 auto 0;
+    height: 40%;
+    background: linear-gradient(180deg, transparent, rgba(153, 187, 114, 0.12), rgba(255,255,255,0.45), rgba(153, 187, 114, 0.12), transparent);
+    animation: scanSweep 2s linear infinite;
+    pointer-events: none;
+  }
+
+  .scan-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+  }
+
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skeleton-shimmer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+    transform: translateX(-100%);
+    animation: skeletonSweep 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes scanSweep {
+  0% {
+    transform: translateY(-120%);
+  }
+  100% {
+    transform: translateY(320%);
+  }
+}
+
+@keyframes skeletonSweep {
+  100% {
+    transform: translateX(100%);
+  }
+}

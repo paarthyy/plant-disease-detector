@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: plant-disease-detector-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app -c gunicorn.conf.py
+    envVars:
+      - key: CORS_ORIGINS
+        sync: false
