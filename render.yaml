@@ -2,7 +2,8 @@ services:
   - type: web
     name: plant-disease-detector-api
     runtime: python
-    buildCommand: python -m pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+    # This command tells pip to prefer pre-built versions and avoids the build-system error
+    buildCommand: python -m pip install --upgrade pip setuptools wheel && pip install --prefer-binary -r requirements.txt
     startCommand: gunicorn app:app -c gunicorn.conf.py
     envVars:
       - key: CORS_ORIGINS
