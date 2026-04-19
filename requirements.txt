@@ -1,10 +1,19 @@
+# Core Utilities
+setuptools
+wheel
+gunicorn==23.0.0
+
+# Framework
 Flask==3.0.3
 Flask-Cors==6.0.1
-gunicorn==23.0.0
+
+# Data & ML (Pinned to stable NumPy 1.x versions)
+numpy==1.26.4
 h5py==3.11.0
 matplotlib==3.8.4
-numpy==1.26.4
-opencv-python-headless==4.10.0.84
 Pillow==10.4.0
 scikit-learn==1.4.2
 tensorflow==2.16.1
+
+# Image Processing
+opencv-python-headless==4.10.0.84
