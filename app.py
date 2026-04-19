@@ -85,12 +85,15 @@ print("All models loaded.")
 # Warm up TF models so the first real request is fast.
 # Without this, the first predict() call compiles the graph and can take 60s+.
 print("Warming up models...")
-_dummy = np.zeros((1, 224, 224, 3), dtype=np.float32)
-LEAF_SCREEN_MODEL.predict(_dummy, verbose=0)
-POTATO_IMAGE_MODEL.predict(_dummy, verbose=0)
+if LEAF_SCREEN_MODEL is not None:
+    _dummy_leaf = np.zeros((1,) + LEAF_SCREEN_MODEL.input_shape[1:], dtype=np.float32)
+    LEAF_SCREEN_MODEL.predict(_dummy_leaf, verbose=0)
+if POTATO_IMAGE_MODEL is not None:
+    _dummy_potato = np.zeros((1,) + POTATO_IMAGE_MODEL.input_shape[1:], dtype=np.float32)
+    POTATO_IMAGE_MODEL.predict(_dummy_potato, verbose=0)
 if TOMATO_IMAGE_MODEL is not None:
-    TOMATO_IMAGE_MODEL.predict(_dummy, verbose=0)
-del _dummy
+    _dummy_tomato = np.zeros((1,) + TOMATO_IMAGE_MODEL.input_shape[1:], dtype=np.float32)
+    TOMATO_IMAGE_MODEL.predict(_dummy_tomato, verbose=0)
 print("Warm-up done. Server is ready.")
 
 
@@ -253,7 +256,14 @@ def classify_leaf_image(crop_name, original, img_norm):
             "gradcam": None,
         }, None
 
-    heatmap, pred_idx, probs = run_gradcam(img_norm, model)
+    target_shape = model.input_shape[1:3]
+    if img_norm.shape[1:3] != target_shape:
+        resized_img = cv2.resize(original, (target_shape[1], target_shape[0]))
+        model_input = np.expand_dims(resized_img / 255.0, axis=0)
+    else:
+        model_input = img_norm
+
+    heatmap, pred_idx, probs = run_gradcam(model_input, model)
     pred_raw = pipeline["classes"][pred_idx]
     disease = map_prediction_to_name(pred_raw)
     info = TREATMENT.get(disease, TREATMENT["Healthy"])
